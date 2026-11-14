@@ -1,0 +1,36 @@
+name: Prepare SoundTube for AI Studio
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download SoundTube and Core
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Verify Core source
+        run: |
+          test -d core/common
+          test -d core/service
+          echo "Core source files found."
+
+      - name: Convert Core into normal project files
+        run: |
+          git switch -c ai-studio-import-core-ready
+          git rm --cached -f core
+          git add -f core
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Prepare complete source for AI Studio"
+          git push origin ai-studio-import-core-ready
+          
