@@ -1,3 +1,4 @@
+
 name: Prepare SoundTube for AI Studio
 
 on:
@@ -22,13 +23,17 @@ jobs:
         run: |
           test -d core/common
           test -d core/service
+          test -d core/domain
           echo "Core source files found."
 
       - name: Convert Core into normal project files
         run: |
-          git switch -c ai-studio-import-core-ready
+          git switch -C ai-studio-import-core-ready
           git rm --cached -f core
+          rm -f core/.git
+          rm -f .gitmodules
           git add -f core
+          git add -u
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Prepare complete source for AI Studio"
