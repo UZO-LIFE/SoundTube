@@ -19,13 +19,11 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Install Android SDK components
         run: |
-          yes | sdkmanager --licenses || true
-          sdkmanager \
+          echo "ANDROID_HOME=${ANDROID_HOME}" >> "$GITHUB_ENV"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
             "platform-tools" \
             "platforms;android-37.0" \
             "build-tools;36.0.0"
