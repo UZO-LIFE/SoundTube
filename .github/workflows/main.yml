@@ -1,40 +1,49 @@
-
-name: Prepare SoundTube for AI Studio
+name: Build SoundTube APK
 
 on:
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  prepare:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download SoundTube and Core
+      - name: Checkout SoundTube
         uses: actions/checkout@v4
         with:
-          ref: dev
-          submodules: recursive
-          fetch-depth: 0
+          ref: ai-studio-import-core-ready
 
-      - name: Verify Core source
-        run: |
-          test -d core/common
-          test -d core/service
-          test -d core/domain
-          echo "Core source files found."
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
 
-      - name: Convert Core into normal project files
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK components
         run: |
-          git switch -C ai-studio-import-core-ready
-          git rm --cached -f core
-          rm -f core/.git
-          rm -f .gitmodules
-          git add -f core
-          git add -u
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Prepare complete source for AI Studio"
-          git push --force origin ai-studio-import-core-ready
+          yes | sdkmanager --licenses || true
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-37.0" \
+            "build-tools;36.0.0"
+
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
+
+      - name: Build SoundTube debug APK
+        run: |
+          ./gradlew :androidApp:assembleDebug \
+            --no-daemon \
+            --no-build-cache \
+            -Dorg.gradle.jvmargs="-Xmx4096m -XX:+UseParallelGC" \
+            -Dorg.gradle.workers.max=2
+
+      - name: Upload SoundTube APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SoundTube-debug-apk
+          path: androidApp/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
